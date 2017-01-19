@@ -12,11 +12,47 @@ namespace AssemblyHasher
     {
         public static string Hash(params string[] filenames)
         {
-            return Hash(false, filenames);
+            return Hash(filenames);
         }
 
-        public static string Hash(bool ignoreVersions, params string[] filenames)
+        public static string Hash(bool ignoreVersions, out Manifest manifest, List<string> filenames)
         {
+            //see if any of the "filenames" are actualy directories, if so expand them and add to the filenames list
+            var otherfiles = new List<string>();
+            var foundDirs = new List<string>();
+            var files = filenames.ToList();
+            foreach (var file in files)
+            {
+                if (File.GetAttributes(file).HasFlag(FileAttributes.Directory))
+                {
+                    //expand out the files in it
+                    var temp = Directory.GetFiles(file, "*.*", SearchOption.AllDirectories);
+                    //add to list
+                    otherfiles.AddRange(temp);
+                    foundDirs.Add(file);
+                }
+            }
+
+            //combine things...
+            if (otherfiles.Any())
+            {
+                //remove found directories 
+                foundDirs.ForEach(f => files.Remove(f));
+
+                //add it
+                files.AddRange(otherfiles);
+
+                //sort it
+                files.Sort();
+
+                //set it
+                filenames = files.ToList();
+
+            }
+
+            manifest = new Manifest();
+
+            //begin the hashing...
             using (var hashService = Murmur.MurmurHash.Create128())
             {
                 foreach (var filename in filenames)
@@ -25,24 +61,44 @@ namespace AssemblyHasher
                     if (extension == ".dll" || extension == ".exe")
                     {
                         var disassembled = Disassembler.Disassemble(filename);
-                        AddFileToHash(disassembled.ILFilename, hashService,
-                            AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions));
+                        AddFileToHash(disassembled.ILFilename, hashService, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions));
+                        HashIndividualFile(manifest, filename, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions), isCompiled:true);
                         foreach (var resource in disassembled.Resources)
                         {
-                            AddFileToHash(resource, hashService,
-                            AssemblySourceCleanup.GetFilter(resource, ignoreVersions));
+                            AddFileToHash(resource, hashService, AssemblySourceCleanup.GetFilter(resource, ignoreVersions));
+                            HashIndividualFile(manifest, resource, AssemblySourceCleanup.GetFilter(resource, ignoreVersions), isCompiled:true);
                         }
-                        disassembled.Delete();
+                        //disassembled.Delete();
                     }
                     else
                     {
-                        AddFileToHash(filename, hashService,
-                            AssemblySourceCleanup.GetFilter(filename, ignoreVersions));
+                        AddFileToHash(filename, hashService, AssemblySourceCleanup.GetFilter(filename, ignoreVersions));
+                        HashIndividualFile(manifest, filename, AssemblySourceCleanup.GetFilter(filename, ignoreVersions));
                     }
                 }
                 hashService.TransformFinalBlock(new byte[0], 0, 0);
-                return Convert.ToBase64String(hashService.Hash);
+                var finalHash = Convert.ToBase64String(hashService.Hash);
+                manifest.MasterHash = finalHash;
+                return manifest.MasterHash;
             }
+
+        }
+
+        private static void HashIndividualFile(Manifest manfiest, string path, StreamFilter filter = null, Encoding encoding = null, bool isCompiled=false)
+        {
+            using (var singleHash = Murmur.MurmurHash.Create128())
+            {
+                AddFileToHash(path, singleHash, filter);
+                var hash = FindHash(singleHash);
+                manfiest.Components.Add(new ChildItem { Path = isCompiled ? Path.GetFileName(path) : path, Hash = hash });
+            }
+        }
+
+        private static string FindHash(HashAlgorithm hashService)
+        {
+            hashService.TransformFinalBlock(new byte[0], 0, 0);
+            return Convert.ToBase64String(hashService.Hash);
+            hashService.Clear();
         }
 
         private static void AddFileToHash(string filename, HashAlgorithm hashService, StreamFilter filter = null, Encoding encoding = null)
