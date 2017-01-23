@@ -18,14 +18,16 @@ namespace AssemblyHasher
         {
             public string Folder { get; private set; }
             public string ILFilename { get; private set; }
+            public bool Successful { get; set; }
             public string[] Resources { get; private set; }
             public void Delete()
             {
                 Directory.Delete(Folder, true);
             }
 
-            public DissasembleOutput(string folder, string ilFilename)
+            public DissasembleOutput(string folder, string ilFilename, bool success=true)
             {
+                Successful = success;
                 Folder = folder;
                 ILFilename = ilFilename;
                 Resources = Directory.EnumerateFiles(Folder)
@@ -162,6 +164,9 @@ namespace AssemblyHasher
 
                 if (process.ExitCode > 0)
                 {
+                    //this wasn't a .NET compatible assembly, just hash its contents
+                    return new DissasembleOutput(Path.GetDirectoryName(assemblyFilename), Path.GetFileName(assemblyFilename));
+
                     throw new InvalidOperationException(
                         string.Format("Generating IL code for file {0} failed with exit code - {1}. Log: {2}",
                         assemblyFilename, process.ExitCode, output));

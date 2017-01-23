@@ -61,14 +61,25 @@ namespace AssemblyHasher
                     if (extension == ".dll" || extension == ".exe")
                     {
                         var disassembled = Disassembler.Disassemble(filename);
-                        
-                        HashIndividualFile(manifest, disassembled.ILFilename, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions), nameHint:Path.GetFileName(filename));
 
-                        foreach (var resource in disassembled.Resources)
+                        if (disassembled.Successful)
                         {
-                            AddFileToHash(resource, hashService, AssemblySourceCleanup.GetFilter(resource, ignoreVersions));
-                            HashIndividualFile(manifest, resource, AssemblySourceCleanup.GetFilter(resource, ignoreVersions), isCompiled:true);
+                            AddFileToHash(disassembled.ILFilename, hashService, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions));
+                            HashIndividualFile(manifest, disassembled.ILFilename, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions), nameHint: Path.GetFileName(filename));
+
+                            foreach (var resource in disassembled.Resources)
+                            {
+                                AddFileToHash(resource, hashService, AssemblySourceCleanup.GetFilter(resource, ignoreVersions));
+                                HashIndividualFile(manifest, resource, AssemblySourceCleanup.GetFilter(resource, ignoreVersions), isCompiled: true);
+                            }
                         }
+                        else
+                        {
+                            //the filename sent, wasn't .NET compatible, can't be disassembled. Hash the bytes of it instead
+                            AddFileToHash(disassembled.ILFilename, hashService, AssemblySourceCleanup.GetFilter(disassembled.ILFilename, ignoreVersions));
+                            HashIndividualFile(manifest, disassembled.ILFilename, AssemblySourceCleanup.GetFilter(disassembled.ILFilename, ignoreVersions));
+                        }
+
                         if(!keepTempFiles)
                             disassembled.Delete();
                     }

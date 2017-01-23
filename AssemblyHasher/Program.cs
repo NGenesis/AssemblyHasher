@@ -64,6 +64,13 @@ namespace AssemblyHasher
 
             if(noExit)
                 Console.Read();
+
+            //cleanup
+            try
+            {
+                File.Delete(Disassembler.ILDasmFileLocation);
+            }
+            catch { }
         }
     }
 
