@@ -35,6 +35,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Build.Framework" />
+    <Reference Include="Microsoft.Build.Utilities.v4.0" />
     <Reference Include="MurmurHash">
       <HintPath>..\packages\murmurhash.1.0.0\lib\net45\MurmurHash.dll</HintPath>
     </Reference>
@@ -51,6 +53,8 @@
     <Compile Include="Disassembler.cs" />
     <Compile Include="ExtMethods.cs" />
     <Compile Include="FileHasher.cs" />
+    <Compile Include="HashProcess.cs" />
+    <Compile Include="HashTask.cs" />
     <Compile Include="Manifest.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

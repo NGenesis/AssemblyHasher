@@ -41,28 +41,18 @@ namespace AssemblyHasher
                 return;
             }
 
-            var m = new Manifest();
+            HashProcess hp = new HashProcess();
+            hp.ignoreVersions = ignoreVersions;
+            hp.keepDisassembly = keepDisassembly;
+            hp.outPath = outPath;
+            hp.tempPath = tempPath;
 
-            var hash = FileHasher.Hash(ignoreVersions, out m, arguments.ToList(), keepDisassembly);
-            Console.Write(hash);
+            //start the process
+            hp.Start(arguments);
 
-            if(!string.IsNullOrEmpty(outPath))
-            {
-                XmlSerializer xs = new XmlSerializer(typeof(Manifest));
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    xs.Serialize(ms, m);
-                    ms.Position = 0;
-                    using (StreamReader sr = new StreamReader(ms))
-                    {
-                        var result = sr.ReadToEnd();
-                        File.WriteAllText(outPath, result);
-                    }
 
-                }
-            }
 
-            if(noExit)
+            if (noExit)
                 Console.Read();
 
             //cleanup
