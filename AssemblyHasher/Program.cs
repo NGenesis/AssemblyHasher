@@ -14,37 +14,36 @@ namespace AssemblyHasher
         {
             bool ignoreVersions = false;
             string outPath = null;
+            bool keepDisassembly = false;
+            bool noExit = false;
+            string tempPath = null;
 
             var arguments = args.ToList();
-            if (arguments.Any(arg => arg == "--ignore-versions"))
-            {
-                arguments.RemoveAll(arg => arg == "--ignore-versions");
-                ignoreVersions = true;
-            }
 
-            if (arguments.Any(a => a.Contains("--output-path:")))
-            {
-                var arg = arguments.Where(a => a.Contains("--output-path:")).FirstOrDefault();
-                if (arg != null)
-                {
-                    outPath = arg.Split(':')[1];
-                    arguments.Remove(arg);
-                }
+            ignoreVersions = arguments.ResolveArgument<bool>("--ignore-versions",false, true);
+            outPath = arguments.ResolveArgument<string>("--output-path", null);
+            keepDisassembly = arguments.ResolveArgument<bool>("--keepFiles", false,true);
+            tempPath = arguments.ResolveArgument<string>("--temp-path", null);
+            noExit = arguments.ResolveArgument<bool>("--noExit", false, true);
 
-            }
+
+            if (tempPath != null)
+                Disassembler.TempPathToUse = tempPath;
 
             if (args.Length < 1)
             {
                 Console.WriteLine("Specify assembly filenames to hash");
                 Console.WriteLine("   --ignore-versions: ignore assembly version and assembly file version attributes");
+                Console.WriteLine("   --output-path: path to place a generated manfiest of the hash and children hashes");
+                Console.WriteLine("   --keepFiles: don't delete the IL and RES files that are created during disassembly");
+                Console.WriteLine("   --temp-path: what path to use for extracting temporary files");
+                Console.WriteLine("   --noExit: ends program with a ReadLine call so it doesn't exit");
                 return;
-
-
             }
 
             var m = new Manifest();
 
-            var hash = FileHasher.Hash(ignoreVersions, out m, arguments.ToList());
+            var hash = FileHasher.Hash(ignoreVersions, out m, arguments.ToList(), keepDisassembly);
             Console.Write(hash);
 
             if(!string.IsNullOrEmpty(outPath))
@@ -63,7 +62,10 @@ namespace AssemblyHasher
                 }
             }
 
-            Console.Read();
+            if(noExit)
+                Console.Read();
         }
     }
+
+    
 }

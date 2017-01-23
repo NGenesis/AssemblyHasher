@@ -115,9 +115,10 @@ namespace AssemblyHasher
             SaveFileFromEmbeddedResource(resourcePath, outFileName);
         }
 
-        private static string GetTemporalFolder()
+        public static string TempPathToUse { get; set; }
+        private static string GetTemporalFolder(string hint=null)
         {
-            var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var path = Path.Combine((TempPathToUse != null ? TempPathToUse : Path.GetTempPath()), hint != null ? Path.GetFileNameWithoutExtension(hint) : Path.GetRandomFileName());
             while (Directory.Exists(path) || File.Exists(path))
             {
                 path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -133,7 +134,7 @@ namespace AssemblyHasher
                 throw new FileNotFoundException(string.Format("The file {0} does not exist!", assemblyFilename));
             }
 
-            var outputFolder = GetTemporalFolder();
+            var outputFolder = GetTemporalFolder(assemblyFilename);
 
             var startInfo = new ProcessStartInfo(ILDasmFileLocation, string.Format(ildasmArguments,
                Path.GetFullPath(assemblyFilename), "output.il"));

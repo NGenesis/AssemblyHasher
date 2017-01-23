@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="AssemblySourceCleanup.cs" />
     <Compile Include="Disassembler.cs" />
+    <Compile Include="ExtMethods.cs" />
     <Compile Include="FileHasher.cs" />
     <Compile Include="Manifest.cs" />
     <Compile Include="Program.cs" />
