@@ -62,7 +62,11 @@ namespace AssemblyHasher
                     {
                         var disassembled = Disassembler.Disassemble(filename);
                         AddFileToHash(disassembled.ILFilename, hashService, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions));
+<<<<<<< HEAD
                         HashIndividualFile(manifest, disassembled.ILFilename, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions), nameHint:Path.GetFileName(filename));
+=======
+                        HashIndividualFile(manifest, filename, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions), isCompiled:true);
+>>>>>>> 61d76355b149334ac512e3a7d1e595cc24fecdc6
                         foreach (var resource in disassembled.Resources)
                         {
                             AddFileToHash(resource, hashService, AssemblySourceCleanup.GetFilter(resource, ignoreVersions));
@@ -84,13 +88,21 @@ namespace AssemblyHasher
 
         }
 
+<<<<<<< HEAD
         private static void HashIndividualFile(Manifest manfiest, string path, StreamFilter filter = null, Encoding encoding = null, bool isCompiled = false, string nameHint = null)
+=======
+        private static void HashIndividualFile(Manifest manfiest, string path, StreamFilter filter = null, Encoding encoding = null, bool isCompiled=false)
+>>>>>>> 61d76355b149334ac512e3a7d1e595cc24fecdc6
         {
             using (var singleHash = Murmur.MurmurHash.Create128())
             {
                 AddFileToHash(path, singleHash, filter);
                 var hash = FindHash(singleHash);
+<<<<<<< HEAD
                 manfiest.Components.Add(new ChildItem { Path = isCompiled ? Path.GetFileName(path) : nameHint ?? path, Hash = hash });
+=======
+                manfiest.Components.Add(new ChildItem { Path = isCompiled ? Path.GetFileName(path) : path, Hash = hash });
+>>>>>>> 61d76355b149334ac512e3a7d1e595cc24fecdc6
             }
         }
 
