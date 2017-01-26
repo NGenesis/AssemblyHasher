@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -23,6 +24,7 @@ namespace AssemblyHasher
             var files = filenames.ToList();
             foreach (var file in files)
             {
+                Trace.WriteLine(string.Format("Compiling file list for {0}", file));
                 if (File.GetAttributes(file).HasFlag(FileAttributes.Directory))
                 {
                     //expand out the files in it
@@ -52,6 +54,7 @@ namespace AssemblyHasher
 
             manifest = new Manifest();
 
+            Trace.WriteLine("Starting to hash files");
             //begin the hashing...
             using (var hashService = Murmur.MurmurHash.Create128())
             {
@@ -60,13 +63,16 @@ namespace AssemblyHasher
                     var extension = Path.GetExtension(filename).ToLowerInvariant();
                     if (extension == ".dll" || extension == ".exe")
                     {
+                        Trace.WriteLine(string.Format("Disassembling file: {0}", Path.GetFileNameWithoutExtension(filename)));
                         var disassembled = Disassembler.Disassemble(filename);
 
                         if (disassembled.Successful)
                         {
+                            Trace.WriteLine("File was dissasembled to " + disassembled.ILFilename);
                             AddFileToHash(disassembled.ILFilename, hashService, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions));
                             HashIndividualFile(manifest, disassembled.ILFilename, AssemblySourceCleanup.GetFilter(AssemblySourceCleanup.FileTypes.IL, ignoreVersions), nameHint: Path.GetFileName(filename));
 
+                            Trace.WriteLine("Extracting resources from " + filename);
                             foreach (var resource in disassembled.Resources)
                             {
                                 AddFileToHash(resource, hashService, AssemblySourceCleanup.GetFilter(resource, ignoreVersions));
@@ -80,8 +86,11 @@ namespace AssemblyHasher
                             HashIndividualFile(manifest, disassembled.ILFilename, AssemblySourceCleanup.GetFilter(disassembled.ILFilename, ignoreVersions));
                         }
 
-                        if(!keepTempFiles)
+                        if (!keepTempFiles)
+                        {
+                            Trace.WriteLine("Removing temporary files");
                             disassembled.Delete();
+                        }
                     }
                     else
                     {
@@ -89,6 +98,8 @@ namespace AssemblyHasher
                         HashIndividualFile(manifest, filename, AssemblySourceCleanup.GetFilter(filename, ignoreVersions));
                     }
                 }
+
+                Trace.WriteLine("Computing master hash for entire assembly set");
                 hashService.TransformFinalBlock(new byte[0], 0, 0);
                 var finalHash = Convert.ToBase64String(hashService.Hash);
                 manifest.MasterHash = finalHash;
@@ -102,8 +113,10 @@ namespace AssemblyHasher
         {
             using (var singleHash = Murmur.MurmurHash.Create128())
             {
+                Trace.WriteLine("Computing hash for " + path);
                 AddFileToHash(path, singleHash, filter);
                 var hash = FindHash(singleHash);
+                Trace.WriteLine("Completed hash, result was " + hash);
                 manfiest.Components.Add(new ChildItem { Path = isCompiled ? Path.GetFileName(path) : nameHint ?? path, Hash = hash });
             }
         }

@@ -21,8 +21,7 @@ namespace AssemblyHasher
         {
             var m = new Manifest();
             var hash = FileHasher.Hash(ignoreVersions, out m, arguments.ToList(), keepDisassembly);
-            Console.Write(hash);
-
+            
             this.Current = m;
 
             if (!string.IsNullOrEmpty(outPath))

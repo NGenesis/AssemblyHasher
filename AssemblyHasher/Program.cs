@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,7 @@ namespace AssemblyHasher
             bool keepDisassembly = false;
             bool noExit = false;
             string tempPath = null;
+            bool showTrace = false;
 
             var arguments = args.ToList();
 
@@ -25,7 +27,11 @@ namespace AssemblyHasher
             keepDisassembly = arguments.ResolveArgument<bool>("--keepFiles", false,true);
             tempPath = arguments.ResolveArgument<string>("--temp-path", null);
             noExit = arguments.ResolveArgument<bool>("--noExit", false, true);
+            showTrace = arguments.ResolveArgument<bool>("--verbose", false, true);
 
+
+            if (showTrace)
+                Trace.Listeners.Add(new ConsoleTraceListener());
 
             if (tempPath != null)
                 Disassembler.TempPathToUse = tempPath;
@@ -38,8 +44,11 @@ namespace AssemblyHasher
                 Console.WriteLine("   --keepFiles: don't delete the IL and RES files that are created during disassembly");
                 Console.WriteLine("   --temp-path: what path to use for extracting temporary files");
                 Console.WriteLine("   --noExit: ends program with a ReadLine call so it doesn't exit");
+                Console.WriteLine("   --verbose: turns on console logging to show program progress");
                 return;
             }
+
+            
 
             HashProcess hp = new HashProcess();
             hp.ignoreVersions = ignoreVersions;
@@ -48,7 +57,10 @@ namespace AssemblyHasher
             hp.tempPath = tempPath;
 
             //start the process
+            Trace.WriteLine("Starting the HashProcess");
             hp.Start(arguments);
+            Console.WriteLine(hp.Current.MasterHash);
+            Trace.WriteLine("HashProcess has completed");
 
 
 
@@ -58,9 +70,12 @@ namespace AssemblyHasher
             //cleanup
             try
             {
+                Trace.WriteLine("Removing ILDASM");
                 File.Delete(Disassembler.ILDasmFileLocation);
             }
             catch { }
+
+            Trace.WriteLine("Exiting...");
         }
     }
 
