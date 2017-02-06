@@ -39,12 +39,16 @@ namespace AssemblyHasher
             if (args.Length < 1)
             {
                 Console.WriteLine("Specify assembly filenames to hash");
+                Console.WriteLine();
                 Console.WriteLine("   --ignore-versions: ignore assembly version and assembly file version attributes");
                 Console.WriteLine("   --output-path: path to place a generated manfiest of the hash and children hashes");
                 Console.WriteLine("   --keepFiles: don't delete the IL and RES files that are created during disassembly");
                 Console.WriteLine("   --temp-path: what path to use for extracting temporary files");
                 Console.WriteLine("   --noExit: ends program with a ReadLine call so it doesn't exit");
                 Console.WriteLine("   --verbose: turns on console logging to show program progress");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("   AssemblyHasher \"file1.dll\" \"path\\to\\files\" --ignore-version --verbose --output-path:manifest.xml");
                 return;
             }
 
